@@ -22,7 +22,7 @@ public partial class Boid : Node3D
 	[Export] private float _edgeBuffer = 15.0f;
 
 	// Spatial Hash Grid
-	public SpatialHashGrid3D spatialHashGrid;
+	private SpatialHashGrid3D _spatialHashGrid;
 	public Vector3I gridIndex = Vector3I.Zero;
 
 	// Boid
@@ -37,7 +37,7 @@ public partial class Boid : Node3D
 	public override void _Ready()
 	{
 		Vector3 offset = new(GD.Randf() * 25.0f, GD.Randf() * 25.0f, GD.Randf() * 25.0f);
-		GlobalPosition = spatialHashGrid.GetGridCenter() + offset;
+		GlobalPosition = _spatialHashGrid.GetGridCenter() + offset;
 
 		Velocity = new (
 			(float)GD.RandRange(-_maxSpeed, _maxSpeed),
@@ -50,13 +50,13 @@ public partial class Boid : Node3D
 	public override void _Process(double delta)
 	{
 		// Retrieve _neighbors in the grid within a specified range
-		_neighbors = spatialHashGrid.GetPrecomputedNeighbors(this);
+		_neighbors = _spatialHashGrid.GetPrecomputedNeighbors(this);
 
 		// Correct steering if the boid is outside the buffered bounds
-		if (!spatialHashGrid.IsPositionInGridBoundsBuffered(Position, _edgeBuffer))
+		if (!_spatialHashGrid.IsPositionInGridBoundsBuffered(Position, _edgeBuffer))
 		{
 			// Calculate steering back towards the grid center
-			Vector3 gridCenter = spatialHashGrid.GetGridCenter();
+			Vector3 gridCenter = _spatialHashGrid.GetGridCenter();
 			Vector3 correctiveSteering = (gridCenter - Position).Normalized() * _boundaryRepulsionForce;
 
 			// Add corrective steering to the boid's velocity
@@ -74,7 +74,11 @@ public partial class Boid : Node3D
 		if (Position != Vector3.Zero && Velocity != Vector3.Zero) LookAt(Position + Velocity);
 
 		// Clamp inside grid bounds
-		Position = Position.Clamp(Vector3.Zero, spatialHashGrid.GetGridBounds());
+		Position = Position.Clamp(Vector3.Zero, _spatialHashGrid.GetGridBounds());
+	}
+
+	public void SetSpatialHashGrid(SpatialHashGrid3D grid) {
+		_spatialHashGrid = grid;
 	}
 
 	private Vector3 GetVelocity()

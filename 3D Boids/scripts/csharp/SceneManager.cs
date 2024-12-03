@@ -1,16 +1,16 @@
 using Godot;
 using System;
+using System.ComponentModel;
 
 [GlobalClass]
 public partial class SceneManager : Node3D
 {
-	[ExportGroup("Spatial Hash Grid")]
-
+	[ExportCategory("Spatial Hash Grid")]
 	[Export] private int _gridSize = 2;
 
 	[ExportGroup("Distance Querying")]
-
 	[Export] private int _neighborSearchDistance = 2;
+
 
 	[ExportSubgroup("Debug")]
 	[Export] private bool _debug = false;
@@ -18,15 +18,19 @@ public partial class SceneManager : Node3D
 	[Export] private bool _drawOccupiedCells = false;
 	[Export] private bool _drawSearchDistance = false;
 
-	[ExportGroup("Spawning")]
 
+	[ExportGroup("Spawning")]
 	[Export] private PackedScene _boidScene;
-	
 	[Export] private int _maxBoids = 100;
 
-	private int _boidCount = 0;
 
+	[ExportCategory("Flock Recognition/Clustering")]
+	[Export] private int _flocks = 10;
+	[Export] private int _boidSearchDistance = 5;
+
+	private int _boidCount = 0;
 	private SpatialHashGrid3D _spatialHashGrid;
+	private FlockRecognizer _flockRecognizer;
 	
 	// DEBUG
 	private Vector3 _steps;
@@ -44,10 +48,14 @@ public partial class SceneManager : Node3D
 		// Get the distance between each layer in all 3 axes.
 		_steps = new(_gridBounds.X / _gridSubdivisions.X, _gridBounds.Y / _gridSubdivisions.Y, _gridBounds.Z / _gridSubdivisions.Z);
 
+		// Spawn boids
 		for (int n = 0; n < _maxBoids; n++)
 		{
 			SpawnBoid();
 		}
+
+		// Set after spawning boids because the class relies on an accurate boid count
+		_flockRecognizer = new FlockRecognizer(_flocks, _boidCount, _spatialHashGrid);
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -58,11 +66,11 @@ public partial class SceneManager : Node3D
 		// Stop if _debug is false
 		if (_debug) 
 		{	
+			DebugDrawGridOutline();
+
 			// Draw grid
 			if(_drawGrid) DebugDrawGrid();
 
-			DebugDrawGridOutline();
-			
 			// Draw occupied grid cells
 			if(_drawOccupiedCells) DebugDrawOccupiedCells();
 
@@ -74,7 +82,7 @@ public partial class SceneManager : Node3D
 	private void SpawnBoid()
 	{	
 		Boid boid = _boidScene.Instantiate<Boid>();
-		boid.spatialHashGrid = _spatialHashGrid;
+		boid.SetSpatialHashGrid(_spatialHashGrid);
 
 		AddChild(boid);
 		_spatialHashGrid.InsertBoid(boid);

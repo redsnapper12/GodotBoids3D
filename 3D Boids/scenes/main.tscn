@@ -23,7 +23,7 @@ albedo_color = Color(0.445226, 0.585175, 0.190157, 1)
 material = SubResource("StandardMaterial3D_fxawn")
 size = Vector2(20000, 20000)
 
-[node name="Scene" type="Node3D"]
+[node name="Scene Manager" type="Node3D"]
 script = ExtResource("1_thbq3")
 _debug = true
 _boidScene = ExtResource("1_7va2n")
